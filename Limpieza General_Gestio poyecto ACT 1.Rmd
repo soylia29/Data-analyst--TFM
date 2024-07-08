@@ -1,0 +1,35 @@
+---
+title: "TesisEntrega1Borrador"
+author: "Bernard Banyuls"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+setwd("C:/Users/BERNARD_UC3M/Desktop/tesis unir/")
+
+library(readxl)
+matriculas_gradoposgrado <- read_excel("C:/Users/Lenovo/OneDrive/Escritorio/MASTER/GESTIO DE PROYECTOS DE INTELIGENCIA/ACTIVIDADES/matriculas_gradoposgrado.xlsx", 
+    sheet = "Matriculados Master")
+View(matriculas_gradoposgrado)
+
+
+
+educmaster <- matriculas_gradoposgrado
+col_names <- educ[4,]
+col_namestoadd <- educ[3, ]
+library(dplyr)
+
+install.packages("xlsx")
+
+
+install.packages("openxlsx")  # Instala el paquete openxlsx si aún no lo has hecho
+library(openxlsx)
+
+write.xlsx(educmaster, file = "datoslimpiosmaster.xlsx")
+
+
+
+```
+
+

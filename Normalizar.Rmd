@@ -1,0 +1,88 @@
+---
+title: "Untitled"
+output: html_document
+date: "2024-01-25"
+---
+
+```{r setup, include=FALSE}
+##### DATOS ####
+library(dplyr)
+library(readxl)
+ACT3_Var_Discreta_Adq_Bicicleta <- read_excel("ACT3 Var Discreta Adq Bicicleta.xlsx")
+
+
+
+##### Aprendizaje no supervisado ####
+adqbicicletas <- ACT3_Var_Discreta_Adq_Bicicleta
+
+library(dplyr)
+
+
+fechaFINdatos <- as.Date("2004-07-31")
+
+AdqBicicleta1 <- adqbicicletas %>% 
+  mutate(EdadReal = round(as.numeric(difftime(fechaFINdatos, adqbicicletas$BirthDate, units = "weeks"))/52.1429)) %>%
+  mutate(Antiguedad = round(as.numeric(difftime(fechaFINdatos, adqbicicletas$DateFirstPurchase, units = "weeks"))))
+
+
+
+AdqBicicleta1N <- AdqBicicleta1[, sapply(AdqBicicleta1,is.numeric)]
+
+AdqBicicleta1N$Age <- NULL #no es la edad real
+AdqBicicleta1N$CustomerID <- NULL #único para cada individuo
+AdqBicicleta1N$PersonID <- NULL #único para cada individuo
+AdqBicicleta1N$BikePurchase <- NULL #variable categórica
+AdqBicicleta1N$HomeOwnerFlag <- NULL #variable categórica
+
+
+summary(AdqBicicleta1N)
+colnames(AdqBicicleta1N)
+
+library(factoextra)
+fviz_nbclust(AdqBicicleta1N,kmeans)
+
+```
+
+
+```{r}
+kmeans <- kmeans(AdqBicicleta1N,3) #kmeans(datos,nºclusters)                   
+
+print(kmeans)
+
+```
+
+```{r}
+aggregate(AdqBicicleta1N, by=list(cluster=kmeans$cluster), mean)  
+```
+```{r}
+biciconcluster <- cbind(AdqBicicleta1N, cluster = kmeans$cluster)
+head(biciconcluster)
+```
+```{r}
+fviz_cluster(kmeans, data = AdqBicicleta1N,
+             palette = c("lightblue", "orange", "pink"), 
+             geom = "point",
+             ellipse.type = "convex", 
+             ggtheme = theme_bw()
+             )
+```
+```{r}
+library(ggplot2)
+
+ggplot(biciconcluster, aes(x = Antiguedad, y = TotalAmount, color = factor(cluster))) +
+  geom_point() +
+  labs(title = "Antiguedad vs. TotalAmount",
+       x = "Antiguedad",
+       y = "TotalAmount")  + 
+  scale_color_manual(values = c("lightblue", "orange", "pink"),
+                     name = "Cluster") + theme_minimal()                                                                                  
+```
+
+```{r}
+library(NbClust)
+NbClust(AdqBicicleta1N, min.nc = 2, max.nc = 10,  method = "kmeans")
+```
+```{r}
+
+```
+

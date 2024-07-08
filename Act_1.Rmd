@@ -1,0 +1,258 @@
+---
+title: "R - UNIR"
+author: "Bernard Banyuls"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+setwd("C:/Users/BERNARD_UC3M/Downloads")
+
+library(readxl)
+grados<- read_excel("Actividad 1/Actividad 1/matriculas_gradoposgrado.xlsx", 
+    sheet = "Matriculados Grado")
+
+master <- read_excel("Actividad 1/Actividad 1/matriculas_gradoposgrado.xlsx", 
+    sheet = "Matriculados Master")
+
+library(dplyr)
+library(tidyverse)
+
+```
+
+
+Realiza dos tablas resumen (una para Grado y otra para Máster) en la que se observe, por universidad, el máximo, el mínimo, la media y la desviación típica del número de alumnos matriculados y del porcentaje de mujeres en sus estudios en el curso 21/22. 
+
+
+```{r}
+grados2122 <- grados %>%
+  group_by(Universidad) %>%
+  summarize(
+    max_matriculas2122 = max(matriculas2122, na.rm = TRUE),
+    min_matriculas2122 = min(matriculas2122, na.rm = TRUE),
+    media_matriculas2122 = mean(matriculas2122, na.rm = TRUE),
+    desviacion_matriculas2122 = sd(matriculas2122, na.rm = TRUE),
+    max_mujeres2122 = max(mujeres2122, na.rm = TRUE),
+    min_mujeres2122 = min(mujeres2122, na.rm = TRUE),
+    media_mujeres2122 = mean(mujeres2122, na.rm = TRUE),
+    desviacion_mujeres2122 = sd(mujeres2122, na.rm = TRUE)
+  )
+
+
+master2122 <- master %>%
+  group_by(Universidad) %>%
+  summarize(
+    max_matriculas2122 = max(matriculas2122, na.rm = TRUE),
+    min_matriculas2122 = min(matriculas2122, na.rm = TRUE),
+    media_matriculas2122 = mean(matriculas2122, na.rm = TRUE),
+    desviacion_matriculas2122 = sd(matriculas2122, na.rm = TRUE),
+    max_mujeres2122 = max(mujeres2122, na.rm = TRUE),
+    min_mujeres2122 = min(mujeres2122, na.rm = TRUE),
+    media_mujeres2122 = mean(mujeres2122, na.rm = TRUE),
+    desviacion_mujeres2122 = sd(mujeres2122, na.rm = TRUE)
+  )
+
+
+
+```
+
+
+Haz representaciones gráficas para Grado, y otra para Máster, en la que se observe el top 30 de universidades españolas con más alumnos en los 7 cursos que incluye el dataset. ¿Existe consonancia entre el top 30 de Grados y Máster? 
+
+
+```{r}
+grados_matriculas <- grados |>  
+  select(Universidad, contains("matriculas")) |>  
+  group_by(Universidad) |> 
+  summarize(across(everything(), mean, na.rm = TRUE)) 
+
+
+resumen_grados <- grados_matriculas  %>%
+  mutate(media_matriculados = rowMeans(select(., -Universidad), na.rm = TRUE)) |> 
+  select(Universidad, media_matriculados) %>%
+  arrange(desc(media_matriculados)) %>%
+  slice_head(n = 30)
+
+
+
+master_matriculas <- master |>  
+  select(Universidad, contains("matriculas")) |>  
+  group_by(Universidad) |> 
+  summarize(across(everything(), mean, na.rm = TRUE)) 
+
+
+resumen_master <- master_matriculas  %>%
+  mutate(media_matriculados = rowMeans(select(., -Universidad), na.rm = TRUE)) |> 
+  select(Universidad, media_matriculados) %>%
+  arrange(desc(media_matriculados)) %>%
+  slice_head(n = 30)
+```
+
+
+```{r}
+ggplot(resumen_grados, aes(x = reorder(Universidad, media_matriculados), y = media_matriculados)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 30 Universidades por media de matriculado en Grados",
+       x = "",
+       y = "Promedio") +  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+
+
+ggplot(resumen_master, aes(x = reorder(Universidad, media_matriculados), y = media_matriculados)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 30 Universidades por media de matriculado en Master",
+       x = "",
+       y = "Promedio") +  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+#Fijarse si es mejor suma o promedio?
+```
+
+
+
+
+La dirección general del grupo educativo está pensando en lanzar un máster de Business Analytics vinculado a la rama de conocimiento “Ciencias Sociales y Jurídicas”. Por ello, piden tablas y representaciones gráficas que permitan conocer el número de alumnos y porcentaje de mujeres en másteres de “Ciencias Sociales y Jurídicas” que contengan en su título las palabras “Inteligencia de Negocio”, “Analítica de Negocio”, “Análisis de Datos” o “Ciencia de Datos”.
+```{r}
+masters_filtrados <- master %>%
+  filter(Rama == "Ciencias Sociales y Jurídicas" &
+         grepl("Inteligencia de Negocio|Analítica de Negocio|Análisis de Datos|Ciencia de Datos", Titulación, ignore.case = TRUE))
+
+
+
+total_alumnos <- sum(masters_filtrados$matriculas2122, na.rm = TRUE)
+
+
+total_mujeres <- sum(masters_filtrados$mujeres2122 * masters_filtrados$matriculas2122, na.rm = TRUE)
+
+total_hombres <- total_alumnos - total_mujeres
+
+# Crear dataframe para el gráfico
+datos_grafico <- data.frame(
+  Genero = c("Mujeres", "Hombres"),
+  Total = c(total_mujeres, total_hombres)
+)
+
+
+
+ggplot(datos_grafico, aes(x = Genero, y = Total, fill = Genero)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Número Total de Alumnos Matriculados en Másteres Curso 21/22",
+       x = "Género",
+       y = "Número Total de Alumnos") +
+  scale_fill_manual(values = c("#FF6F61", "#6B5B95")) +  
+  theme_minimal() 
+
+
+#Fijarse si hacer con otros años
+
+```
+
+Finalmente, el grupo educativo quiere lanzar una campaña de marketing en redes sociales para publicitar los estudios que lanzará. Para ello, quiere conocer el top 30 de titulaciones con más presencia de mujeres. Además, la dirección general quiere conocer si la presencia de mujeres por “Rama de Conocimiento” ya sufrido cambios en los últimos 7 cursos. 
+
+
+```{r}
+grados_matriculas_mujeres <- grados |>  
+  select(Universidad, contains("mujeres")) |>  
+  group_by(Universidad) |> 
+  summarize(across(everything(), mean, na.rm = TRUE)) 
+
+
+resumen_grados_mujeres <- grados_matriculas_mujeres  %>%
+  mutate(media_mujeres = rowMeans(select(., -Universidad), na.rm = TRUE)) |> 
+  select(Universidad, media_mujeres) %>%
+  arrange(desc(media_mujeres)) %>%
+  slice_head(n = 30)
+
+ggplot(resumen_grados_mujeres, aes(x = reorder(Universidad, media_mujeres), y = media_mujeres)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 30 Universidades por media de Mujeres en Grados",
+       x = "",
+       y = "% promedio") +  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+
+
+
+
+#Master
+
+master_matriculas_mujeres <- master |>  
+  select(Universidad, contains("mujeres")) |>  
+  group_by(Universidad) |> 
+  summarize(across(everything(), mean, na.rm = TRUE)) 
+
+
+resumen_master_mujeres <- master_matriculas_mujeres  %>%
+  mutate(media_mujeres = rowMeans(select(., -Universidad), na.rm = TRUE)) |> 
+  select(Universidad, media_mujeres) %>%
+  arrange(desc(media_mujeres)) %>%
+  slice_head(n = 30)
+
+ggplot(resumen_master_mujeres, aes(x = reorder(Universidad, media_mujeres), y = media_mujeres)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 30 Universidades por media de Mujeres en Master",
+       x = "",
+       y = "% promedio") +  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+```
+
+Además, la dirección general quiere conocer si la presencia de mujeres por “Rama de Conocimiento” ya sufrido cambios en los últimos 7 cursos. 
+
+
+```{r}
+
+analisis_ramagrado <- grados |> 
+  select(Rama, contains("mujeres")) |> 
+  group_by(Rama) |>
+  summarize(across(everything(), mean, na.rm = TRUE)) 
+  
+
+  
+rama_data_long <- pivot_longer(analisis_ramagrado, cols = starts_with("mujeres"), names_to = "Año", values_to = "Presencia_Mujeres")
+
+rama_data_long <- rama_data_long %>%
+  mutate(Año = paste0("20", str_sub(Año, start = 10)))
+
+
+ggplot(rama_data_long, aes(x = Año, y = Presencia_Mujeres, color = Rama, group = Rama)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Presencia de Mujeres por Rama en Grado",
+       x = "Año",
+       y = "Presencia de Mujeres",
+       color = "Rama") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+Lo mismo para Máster
+
+
+
+```{r}
+analisis_ramamaster<- master |> 
+  select(Rama, contains("mujeres")) |> 
+  group_by(Rama) |>
+  summarize(across(everything(), mean, na.rm = TRUE)) 
+  
+  
+
+  
+rama_data_long_master <- pivot_longer(analisis_ramamaster, cols = starts_with("mujeres"), names_to = "Año", values_to = "Presencia_Mujeres")
+
+rama_data_long_master <- rama_data_long_master %>%
+  mutate(Año = paste0("20", str_sub(Año, start = 10)))
+
+
+ggplot(rama_data_long_master, aes(x = Año, y = Presencia_Mujeres, color = Rama, group = Rama)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Presencia de Mujeres por Rama en Máster",
+       x = "Año",
+       y = "Presencia de Mujeres",
+       color = "Rama") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+  
+  
